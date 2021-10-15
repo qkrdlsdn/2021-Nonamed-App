@@ -15,11 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.2021_NonamedProject_v1">
         <activity
-            android:name=".CtrlActivity"
-            android:screenOrientation="landscape"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-            />
-        <activity
             android:name=".StartActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             >
