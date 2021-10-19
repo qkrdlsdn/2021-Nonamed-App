@@ -17,12 +17,25 @@
             layout="@layout/bluetooth_layout"
             android:visibility="visible"/>
 
-        <include
-            android:id="@+id/control"
+        <FrameLayout
+            android:id="@+id/controller"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            layout="@layout/control_layout"
-            android:visibility="gone"/>
+            android:visibility="gone">
+
+            <include
+                android:id="@+id/streamer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                layout="@layout/stream_layout"/>
+
+            <include
+                android:id="@+id/control"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                layout="@layout/control_layout"/>
+
+        </FrameLayout>
 
     </FrameLayout>
 

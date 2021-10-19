@@ -14,6 +14,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -30,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
     private final static int REQUEST_ENABLE_BT = 1;
 
     private TextView textStatus;
-    private Button btnParied, btnSearch, btnSend;
     private ListView listView;
 
     private Set<BluetoothDevice> pairedDevices;
@@ -42,9 +42,11 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isCtrlFlag;
     private boolean isConnected;
-    private View bluetooth, control;
+    private View bluetooth, control, controller;
 
-    private Button disconnect;
+    private WebView webView;
+    private String url;
+    private long backBtnTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,26 +113,39 @@ public class MainActivity extends AppCompatActivity {
 
     public void initWidget() {
         textStatus = (TextView) findViewById(R.id.text_status);
-        btnParied = (Button) findViewById(R.id.btn_paired);
-        btnSearch = (Button) findViewById(R.id.btn_search);
         listView = (ListView) findViewById(R.id.listview);
 
         bluetooth = (View) findViewById(R.id.bluetooth);
         control = (View) findViewById(R.id.control);
-        disconnect = (Button) findViewById(R.id.btn_disconnect);
+        controller = (View) findViewById(R.id.controller);
+
+        webView = (WebView) findViewById(R.id.webView);
     }
 
     public void changeMod(boolean isCtrlFlag) {
         if(isCtrlFlag) {
             bluetooth.setVisibility(View.GONE);
-            control.setVisibility(View.VISIBLE);
+            controller.setVisibility(View.VISIBLE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            StreamingCamera(url);
         }
         else {
             bluetooth.setVisibility(View.VISIBLE);
-            control.setVisibility(View.GONE);
+            controller.setVisibility(View.GONE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         }
+    }
+
+    public void StreamingCamera(String url) {
+        webView.setPadding(0,0,0,0);
+        //webView.setInitialScale(100);
+        webView.getSettings().setBuiltInZoomControls(false);
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setLoadWithOverviewMode(true);
+        webView.getSettings().setUseWideViewPort(true);
+        //webView.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+
+        webView.loadUrl(url);
     }
 
     public void onClickButtonPaired(View view){
@@ -190,6 +205,22 @@ public class MainActivity extends AppCompatActivity {
 
         // Don't forget to unregister the ACTION_FOUND receiver.
         unregisterReceiver(receiver);
+    }
+
+    @Override
+    public void onBackPressed() {
+        long curTime = System.currentTimeMillis();
+        long gapTime = curTime - backBtnTime;
+        if (webView.canGoBack()) {
+            webView.goBack();
+        } else if (0 <= gapTime && 2000 >= gapTime) {
+            super.onBackPressed();
+        } else {
+            backBtnTime = curTime;
+            Toast.makeText(this, "한번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
+        }
+
+
     }
 
     public void onClickFront(View view) {
