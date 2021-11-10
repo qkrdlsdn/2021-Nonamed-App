@@ -1,8 +1,5 @@
 package com.example.a2021_nonamedproject_v1;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -11,10 +8,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -22,40 +19,39 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    private BluetoothAdapter btAdapter;
+    BluetoothAdapter btAdapter = null;
     private final static int REQUEST_ENABLE_BT = 1;
 
-    private TextView textStatus;
-    private ListView listView;
+    TextView textStatus;
+    Button btnParied, btnSearch, btnSend;
+    ListView listView;
 
-    private Set<BluetoothDevice> pairedDevices;
-    private ArrayAdapter<String> btArrayAdapter;
-    private ArrayList<String> deviceAddressArray;
+    Set<BluetoothDevice> pairedDevices;
+    ArrayAdapter<String> btArrayAdapter;
+    ArrayList<String> deviceAddressArray;
 
-    private BluetoothSocket btSocket;
-    private ConnectedThread connectedThread;
+    BluetoothSocket btSocket = null;
+    String TAG = "MainActivity";
+    UUID BT_MODULE_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
+    ConnectedThread connectedThread;
 
-    private boolean isCtrlFlag;
-    private boolean isConnected;
-    private View bluetooth, control, controller;
-
-    private WebView webView;
-    private String url;
-    private long backBtnTime = 0;
+    View bluetoothLayout, controlLayout;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        isCtrlFlag = false;
-        initWidget();
-        changeMod(isCtrlFlag);
 
         // Get permission
         String[] permission_list = {
@@ -72,80 +68,25 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
+        // variables
+        textStatus = (TextView) findViewById(R.id.text_status);
+        btnParied = (Button) findViewById(R.id.btn_paired);
+        btnSearch = (Button) findViewById(R.id.btn_search);
+        btnSend = (Button) findViewById(R.id.btn_send);
+        listView = (ListView) findViewById(R.id.listview);
+
         // show paired devices
         btArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
         deviceAddressArray = new ArrayList<>();
         listView.setAdapter(btArrayAdapter);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(getApplicationContext(), btArrayAdapter.getItem(position), Toast.LENGTH_SHORT).show();
+        listView.setOnItemClickListener(new myOnItemClickListener());
 
-                textStatus.setText("try...");
+        bluetoothLayout = (View)findViewById(R.id.bluetooth);
+        controlLayout = (View) findViewById(R.id.control);
 
-                final String name = btArrayAdapter.getItem(position); // get name
-                final String address = deviceAddressArray.get(position); // get address
-                boolean flag = true;
-
-                BluetoothDevice device = btAdapter.getRemoteDevice(address);
-
-                // create & connect socket
-                try {
-                    btSocket.connect();
-                } catch (IOException e) {
-                    flag = false;
-                    textStatus.setText("connection failed!");
-                    e.printStackTrace();
-                }
-
-                if(flag){
-                    textStatus.setText("connected to "+name);
-                    connectedThread = new ConnectedThread(btSocket);
-                    connectedThread.start();
-
-                    isCtrlFlag = true;
-                    changeMod(isCtrlFlag);
-                }
-            }
-        });
-    }
-
-    public void initWidget() {
-        textStatus = (TextView) findViewById(R.id.text_status);
-        listView = (ListView) findViewById(R.id.listview);
-
-        bluetooth = (View) findViewById(R.id.bluetooth);
-        control = (View) findViewById(R.id.control);
-        controller = (View) findViewById(R.id.controller);
-
-        webView = (WebView) findViewById(R.id.webView);
-    }
-
-    public void changeMod(boolean isCtrlFlag) {
-        if(isCtrlFlag) {
-            bluetooth.setVisibility(View.GONE);
-            controller.setVisibility(View.VISIBLE);
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            StreamingCamera(url);
-        }
-        else {
-            bluetooth.setVisibility(View.VISIBLE);
-            controller.setVisibility(View.GONE);
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-        }
-    }
-
-    public void StreamingCamera(String url) {
-        webView.setPadding(0,0,0,0);
-        //webView.setInitialScale(100);
-        webView.getSettings().setBuiltInZoomControls(false);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setLoadWithOverviewMode(true);
-        webView.getSettings().setUseWideViewPort(true);
-        //webView.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
-
-        webView.loadUrl(url);
+        btnSend.setBackgroundColor(Color.rgb(102,102,102));
+        btnSend.setClickable(false);
     }
 
     public void onClickButtonPaired(View view){
@@ -182,6 +123,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void onClickButtonSend(View view){
+        String command = null;
+        if(connectedThread!=null){
+            if (view.getId() == R.id.drive) command = "d";
+            else if (view.getId() == R.id.back) command = "b";
+            else if (view.getId() == R.id.left) command = "l";
+            else if (view.getId() == R.id.right) command = "r";
+            else command = "n";
+
+            connectedThread.write(command);
+            Toast.makeText(getApplicationContext(), "send" + command, Toast.LENGTH_SHORT).show();
+        }
+        else {
+            Toast.makeText(getApplicationContext(), "connect fail", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -207,39 +165,73 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(receiver);
     }
 
+    public class myOnItemClickListener implements AdapterView.OnItemClickListener {
+
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            Toast.makeText(getApplicationContext(), btArrayAdapter.getItem(position), Toast.LENGTH_SHORT).show();
+
+            textStatus.setText("try...");
+            //선택된 기기의 이름과 주소를 가져옴
+            final String name = btArrayAdapter.getItem(position); // get name
+            final String address = deviceAddressArray.get(position); // get address
+            boolean flag = true;
+            // 가져온 주소로 BluetoothDevice를 만듬
+            BluetoothDevice device = btAdapter.getRemoteDevice(address);
+
+            // 그 기기의 소켓 생성 및 연결 시도
+            try {
+                btSocket = createBluetoothSocket(device);
+                btSocket.connect();
+            } catch (IOException e) {
+                flag = false;
+                textStatus.setText("connection failed!");
+                e.printStackTrace();
+                btnSend.setBackgroundColor(Color.rgb(102,102,102));
+                btnSend.setClickable(false);
+            }
+
+            // 블루투스 통신 시작
+            if(flag){
+                textStatus.setText("connected to "+name);
+                connectedThread = new ConnectedThread(btSocket);
+                connectedThread.start();
+                btnSend.setClickable(true);
+                btnSend.setBackgroundColor(Color.rgb(0,51,204));
+            }
+
+        }
+    }
+
+    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
+        try {
+            final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", UUID.class);
+            return (BluetoothSocket) m.invoke(device, BT_MODULE_UUID);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not create Insecure RFComm Connection",e);
+        }
+        return  device.createRfcommSocketToServiceRecord(BT_MODULE_UUID);
+    }
+
+    public void ChangeMod(View v) {
+        if (bluetoothLayout.getVisibility() == View.VISIBLE) {
+            getSupportActionBar().hide();
+            bluetoothLayout.setVisibility(View.INVISIBLE);
+            controlLayout.setVisibility(View.VISIBLE);
+        } else if (bluetoothLayout.getVisibility() == View.INVISIBLE) {
+            getSupportActionBar().show();
+            controlLayout.setVisibility(View.INVISIBLE);
+            bluetoothLayout.setVisibility(View.VISIBLE);
+        }
+    }
+
     @Override
     public void onBackPressed() {
-        long curTime = System.currentTimeMillis();
-        long gapTime = curTime - backBtnTime;
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else if (0 <= gapTime && 2000 >= gapTime) {
-            super.onBackPressed();
-        } else {
-            backBtnTime = curTime;
-            Toast.makeText(this, "한번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
+        if (bluetoothLayout.getVisibility() == View.INVISIBLE) {
+            getSupportActionBar().show();
+            controlLayout.setVisibility(View.INVISIBLE);
+            bluetoothLayout.setVisibility(View.VISIBLE);
         }
-
-
-    }
-
-    public void onClickFront(View view) {
-        if(connectedThread!=null){ connectedThread.write("f"); }
-    }
-
-    public void onClickBack(View view) {
-        if(connectedThread!=null){ connectedThread.write("b"); }
-    }
-
-    public void onClickLeft(View view) {
-        if(connectedThread!=null){ connectedThread.write("l"); }
-    }
-
-    public void onClickRight(View view) {
-        if(connectedThread!=null){ connectedThread.write("r"); }
-    }
-
-    public void onClickDisconnect(View view) {
-        onBackPressed();
+        else super.onBackPressed();
     }
 }
