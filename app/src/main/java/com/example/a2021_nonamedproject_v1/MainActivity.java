@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -22,6 +23,8 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -47,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     ConnectedThread connectedThread;
 
     View bluetoothLayout, controlLayout;
+    FloatingActionButton drive, back, left, right;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -84,9 +88,77 @@ public class MainActivity extends AppCompatActivity {
 
         bluetoothLayout = (View)findViewById(R.id.bluetooth);
         controlLayout = (View) findViewById(R.id.control);
+        drive = (FloatingActionButton) findViewById(R.id.drive);
+        back = (FloatingActionButton) findViewById(R.id.back);
+        left = (FloatingActionButton) findViewById(R.id.left);
+        right = (FloatingActionButton) findViewById(R.id.right);
 
         btnSend.setBackgroundColor(Color.rgb(102,102,102));
         btnSend.setClickable(false);
+
+        drive.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        onClickButtonSend(v);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        onClickButtonSend(controlLayout);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+
+        back.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        onClickButtonSend(v);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        onClickButtonSend(controlLayout);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+
+        left.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        onClickButtonSend(v);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        onClickButtonSend(controlLayout);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+
+        right.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        onClickButtonSend(v);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        onClickButtonSend(controlLayout);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
     }
 
     public void onClickButtonPaired(View view){
@@ -130,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
             else if (view.getId() == R.id.back) command = "b";
             else if (view.getId() == R.id.left) command = "l";
             else if (view.getId() == R.id.right) command = "r";
-            else command = "n";
+            else command = "p";
 
             connectedThread.write(command);
             Toast.makeText(getApplicationContext(), "send" + command, Toast.LENGTH_SHORT).show();
@@ -197,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
                 connectedThread = new ConnectedThread(btSocket);
                 connectedThread.start();
                 btnSend.setClickable(true);
-                btnSend.setBackgroundColor(Color.rgb(0,51,204));
+                btnSend.setBackgroundColor(Color.rgb(0,102,0));
             }
 
         }
