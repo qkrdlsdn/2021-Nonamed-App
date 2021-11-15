@@ -269,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
                 connectedThread = new ConnectedThread(btSocket);
                 connectedThread.start();
                 btnSend.setClickable(true);
-                btnSend.setBackgroundColor(Color.rgb(0,102,0));
+                btnSend.setBackgroundColor(Color.rgb(50,150,50));
             }
 
         }
