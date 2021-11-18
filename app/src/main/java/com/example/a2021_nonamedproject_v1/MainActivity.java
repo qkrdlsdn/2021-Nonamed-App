@@ -13,6 +13,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -49,8 +52,13 @@ public class MainActivity extends AppCompatActivity {
     UUID BT_MODULE_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
     ConnectedThread connectedThread;
 
-    View bluetoothLayout, controlLayout;
+    View bluetoothLayout, controlLayout, streamLayout;
     FloatingActionButton drive, back, left, right;
+
+    //mjpg-streaming
+    private WebView mWebView; // 웹뷰 선언
+    private WebSettings mWebSettings; //웹뷰세팅
+    private String StreamUrl = "http://localhost:8090/?action=stream";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -72,29 +80,11 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
-        // variables
-        textStatus = (TextView) findViewById(R.id.text_status);
-        btnParied = (Button) findViewById(R.id.btn_paired);
-        btnSearch = (Button) findViewById(R.id.btn_search);
-        btnSend = (Button) findViewById(R.id.btn_send);
-        listView = (ListView) findViewById(R.id.listview);
-
-        // show paired devices
-        btArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
-        deviceAddressArray = new ArrayList<>();
-        listView.setAdapter(btArrayAdapter);
-
-        listView.setOnItemClickListener(new myOnItemClickListener());
-
-        bluetoothLayout = (View)findViewById(R.id.bluetooth);
-        controlLayout = (View) findViewById(R.id.control);
-        drive = (FloatingActionButton) findViewById(R.id.drive);
-        back = (FloatingActionButton) findViewById(R.id.back);
-        left = (FloatingActionButton) findViewById(R.id.left);
-        right = (FloatingActionButton) findViewById(R.id.right);
+        InitViewId();
 
         btnSend.setBackgroundColor(Color.rgb(102,102,102));
         btnSend.setClickable(false);
+        Streaming();
 
         drive.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -161,6 +151,37 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public void InitViewId() {
+        // variables
+        textStatus = (TextView) findViewById(R.id.text_status);
+        btnParied = (Button) findViewById(R.id.btn_paired);
+        btnSearch = (Button) findViewById(R.id.btn_search);
+        btnSend = (Button) findViewById(R.id.btn_send);
+        listView = (ListView) findViewById(R.id.listview);
+
+        // show paired devices
+        btArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+        deviceAddressArray = new ArrayList<>();
+        listView.setAdapter(btArrayAdapter);
+
+        //select device
+        listView.setOnItemClickListener(new myOnItemClickListener());
+
+        //Layout Change
+        bluetoothLayout = (View)findViewById(R.id.bluetooth);
+        controlLayout = (View) findViewById(R.id.control);
+        streamLayout = (View) findViewById(R.id.streaming);
+
+        //bluetooth control
+        drive = (FloatingActionButton) findViewById(R.id.drive);
+        back = (FloatingActionButton) findViewById(R.id.back);
+        left = (FloatingActionButton) findViewById(R.id.left);
+        right = (FloatingActionButton) findViewById(R.id.right);
+
+        //webView
+        mWebView = (WebView) findViewById(R.id.webView);
+    }
+
     public void onClickButtonPaired(View view){
         btArrayAdapter.clear();
         if(deviceAddressArray!=null && !deviceAddressArray.isEmpty()){ deviceAddressArray.clear(); }
@@ -205,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
             else command = "p";
 
             connectedThread.write(command);
-            Toast.makeText(getApplicationContext(), "send" + command, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(), "send" + command, Toast.LENGTH_SHORT).show();
         }
         else {
             Toast.makeText(getApplicationContext(), "connect fail", Toast.LENGTH_SHORT).show();
@@ -286,14 +307,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void ChangeMod(View v) {
-        if (bluetoothLayout.getVisibility() == View.VISIBLE) {
+        if (bluetoothLayout.getVisibility() == View.VISIBLE) { //bluetooth -> control
             getSupportActionBar().hide();
             bluetoothLayout.setVisibility(View.INVISIBLE);
+            streamLayout.setVisibility(View.INVISIBLE);
             controlLayout.setVisibility(View.VISIBLE);
-        } else if (bluetoothLayout.getVisibility() == View.INVISIBLE) {
+        } else if (bluetoothLayout.getVisibility() == View.INVISIBLE) { //control to bluetooth
             getSupportActionBar().show();
             controlLayout.setVisibility(View.INVISIBLE);
             bluetoothLayout.setVisibility(View.VISIBLE);
+            streamLayout.setVisibility(View.VISIBLE);
+            mWebView.loadUrl(StreamUrl);
         }
     }
 
@@ -305,5 +329,20 @@ public class MainActivity extends AppCompatActivity {
             bluetoothLayout.setVisibility(View.VISIBLE);
         }
         else super.onBackPressed();
+    }
+
+    public void Streaming() {
+        mWebView.setWebViewClient(new WebViewClient()); // 클릭시 새창 안뜨게
+        mWebSettings = mWebView.getSettings(); //세부 세팅 등록
+        mWebSettings.setJavaScriptEnabled(true); // 웹페이지 자바스클비트 허용 여부
+        mWebSettings.setSupportMultipleWindows(false); // 새창 띄우기 허용 여부
+        mWebSettings.setJavaScriptCanOpenWindowsAutomatically(false); // 자바스크립트 새창 띄우기(멀티뷰) 허용 여부
+        mWebSettings.setLoadWithOverviewMode(true); // 메타태그 허용 여부
+        mWebSettings.setUseWideViewPort(true); // 화면 사이즈 맞추기 허용 여부
+        mWebSettings.setSupportZoom(false); // 화면 줌 허용 여부
+        mWebSettings.setBuiltInZoomControls(false); // 화면 확대 축소 허용 여부
+        mWebSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN); // 컨텐츠 사이즈 맞추기
+        mWebSettings.setCacheMode(WebSettings.LOAD_NO_CACHE); // 브라우저 캐시 허용 여부
+        mWebSettings.setDomStorageEnabled(true); // 로컬저장소 허용 여부
     }
 }

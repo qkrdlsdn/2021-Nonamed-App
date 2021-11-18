@@ -17,6 +17,12 @@
             />
 
         <include
+            android:id="@+id/streaming"
+            layout="@layout/stream_layout"
+            android:visibility="invisible"
+            />
+
+        <include
             android:id="@+id/control"
             layout="@layout/control_layout"
             android:visibility="invisible"
