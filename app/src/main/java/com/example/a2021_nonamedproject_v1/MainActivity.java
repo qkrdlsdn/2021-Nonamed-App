@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     //mjpg-streaming
     private WebView mWebView; // 웹뷰 선언
     private WebSettings mWebSettings; //웹뷰세팅
-    private String StreamUrl = "http://localhost:8090/?action=stream";
+    private String StreamUrl = "http://192.168.137.128:8091/?action=stream";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setBackgroundColor(Color.rgb(102,102,102));
         btnSend.setClickable(false);
         Streaming();
+        mWebView.loadUrl(StreamUrl);
 
         drive.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -310,14 +311,13 @@ public class MainActivity extends AppCompatActivity {
         if (bluetoothLayout.getVisibility() == View.VISIBLE) { //bluetooth -> control
             getSupportActionBar().hide();
             bluetoothLayout.setVisibility(View.INVISIBLE);
-            streamLayout.setVisibility(View.INVISIBLE);
             controlLayout.setVisibility(View.VISIBLE);
-        } else if (bluetoothLayout.getVisibility() == View.INVISIBLE) { //control to bluetooth
+            streamLayout.setVisibility(View.VISIBLE);
+        } else if (bluetoothLayout.getVisibility() == View.INVISIBLE) { //control -> bluetooth
             getSupportActionBar().show();
             controlLayout.setVisibility(View.INVISIBLE);
             bluetoothLayout.setVisibility(View.VISIBLE);
-            streamLayout.setVisibility(View.VISIBLE);
-            mWebView.loadUrl(StreamUrl);
+            streamLayout.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -327,6 +327,7 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().show();
             controlLayout.setVisibility(View.INVISIBLE);
             bluetoothLayout.setVisibility(View.VISIBLE);
+            streamLayout.setVisibility(View.INVISIBLE);
         }
         else super.onBackPressed();
     }
